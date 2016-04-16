@@ -2,19 +2,24 @@ var observer;
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.message === "clicked_browser_action") {
-      var speak = function() {
-        var comments = document.querySelectorAll('ul.chat-lines li')
+        const speak = () => {
+          const comments = document.querySelectorAll('ul.chat-lines li')
 
-        var length = comments.length
-        var comment = comments[comments.length - 1].querySelector('.message')
-        var regex = /(\<.​* alt="([a-zA-Z]*​)".*\>)/g
+          const length = comments.length
+          const comment = comments[comments.length - 1].querySelector('.message')
+          const regex = /(\<.​* alt="([a-zA-Z]*​)".*\>)/g
 
-        window.speechSynthesis.speak(new SpeechSynthesisUtterance(comment.innerHTML.replace(regex, '$2')))
-      }
+          window.speechSynthesis.speak(new SpeechSynthesisUtterance(comment.innerHTML.replace(regex, '$2')))
+        }
 
-      var observer = new MutationObserver(speak)
+        if (!observer) {
+            observer = new MutationObserver(speak)
+            observer.observe(document.querySelector('ul.chat-lines'), {childList: true})
+        } else {
+            observer.disconnect()
+            window.speechSynthesis.cancel()
+            observer = null
+        }
 
-      observer.observe(document.querySelector('ul.chat-lines'), {childList: true})
     }
 })
-
