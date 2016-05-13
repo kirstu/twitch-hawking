@@ -1,4 +1,3 @@
-
 let observer;
 let filterWhiteList = []
 let usedVoice = null
@@ -64,19 +63,18 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
 
 function toggleObserver() {
   if (!observer) {
-      console.log('Starting observer')
-      observer = new MutationObserver(tryToUtter)
-      observer.observe(document.querySelector('ul.chat-lines'), {childList: true})
+    console.log('Starting observer')
+    observer = new MutationObserver(tryToUtter)
+    observer.observe(document.querySelector('ul.chat-lines'), {childList: true})
   } else {
-      console.log('disconnecting')
-      observer.disconnect()
-      window.speechSynthesis.cancel()
-      observer = null
+    console.log('disconnecting')
+    observer.disconnect()
+    window.speechSynthesis.cancel()
+    observer = null
   }
 }
 
-
-function addObserverLink() {
+function addObserverLink(chatEl) {
   //Boot it uppah
   const linkNode = document.createElement('a')
   linkNode.innerHTML = "HAWKING"
@@ -85,6 +83,22 @@ function addObserverLink() {
   document.querySelector(".chat-buttons-container").appendChild(linkNode)
 }
 
-window.setTimeout(addObserverLink, 5000)
+const getChatEl = () => new Promise((resolve, reject) => {
+  const findChat = (target, observerInstance) => {
+    const chatEl = document.querySelector("ul.chat-lines")
+    console.log(chatEl)
+    if (chatEl) {
+      observerInstance.disconnect()
+      observerInstance = null
+      return resolve(chatEl)
+    }
+  }
+  const observer = new MutationObserver(findChat);
+  observer.observe(document.body, {childList: true})
+})
+
+getChatEl().then(addObserverLink)
+
+// window.setTimeout(addObserverLink, 5000)
 
 

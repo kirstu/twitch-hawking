@@ -1,14 +1,9 @@
 {
   "manifest_version": 2,
-
-  "name": "Twitch Hawking",
+  "name": "Twitch Hawkings",
   "description": "This extension will tell the truth",
   "version": "1.0",
   "options_page": "options.html",
-
-  "browser_action": {
-   "default_icon": "speech.png"
-  },
   "permissions": [
     "activeTab",
     "storage"
@@ -22,8 +17,5 @@
   "options_ui": {
     "page": "options.html",
     "chrome_style": true
-  },
-  "background": {
-    "scripts": ["background.js"]
   }
 }
