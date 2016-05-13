@@ -1,56 +1,90 @@
 
-var observer;
+let observer;
 let filterWhiteList = []
+let usedVoice = null
 
+//Speak out the sentence in selected voice. Console log for goodness and bugfix.
+function utter(text, voice) {
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.voice = voice
+  console.log(utterance)
+  window.speechSynthesis.speak(utterance)
+}
 
-chrome.storage.sync.get({keywords: "kappa"}, ({keywords}) => {
+function getNewestComment() {
+  const comments = document.querySelectorAll('ul.chat-lines li')
+
+  const length = comments.length
+  return comments[comments.length - 1].querySelector('.message').innerHTML.toLowerCase()
+}
+
+function shouldUtter(comment) {
+  return filterWhiteList.some(whiteWord => comment.includes(whiteWord))
+}
+
+function tryToUtter() {
+  const comment = getNewestComment()
+  if(shouldUtter(comment)) {
+    const commentWithKappas = kappafy(comment)
+    utter(commentWithKappas, usedVoice)
+  }
+}
+
+function kappafy(comment) {
+  const kappaUrlToKappaRegex = /(\<.* alt="([a-zA-Z]*)" .*\>*)/gi
+
+  return comment
+    .replace(/\\n/g, "")                        // Remove possible newlines
+    .trim()
+    .replace(kappaUrlToKappaRegex, "$2".trim()) // Parse kappas from urls
+    .replace(/\<.*\>/g, "")                     // Remove other possible HTML
+    .replace(/WTF/i, "What the funk")
+}
+
+//Get settings
+chrome.storage.sync.get({keywords: "kappa", voice: "Alex"}, ({keywords, voice}) => {
   filterWhiteList = keywords.split(",")
-
+  window.speechSynthesis.onvoiceschanged = function () {
+    usedVoice = window.speechSynthesis.getVoices().find(synthVoice => synthVoice.name === voice)
+  }
 })
 
+//Set up listeners for changes in options
 chrome.storage.onChanged.addListener(function(changes, namespace) {
-  filterWhiteList = changes["keywords"].newValue.split(",")
-  window.speechSynthesis.speak(new SpeechSynthesisUtterance("New keywords!"))
+  if(changes["voice"]) {
+    usedVoice = usedVoice = window.speechSynthesis.getVoices().find(synthVoice => synthVoice.name === changes["voice"].newValue)
+    utter("New voice PogChamp", usedVoice)
+  }
+
+  if(changes["keywords"]) {
+    filterWhiteList = changes["keywords"].newValue.split(",")
+    utter("New keywords! KappaPride", usedVoice)
+  }
 })
 
-
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    if (request.message === "clicked_browser_action") {
-        const speak = () => {
-          const comments = document.querySelectorAll('ul.chat-lines li')
-
-          const length = comments.length
-          const comment = comments[comments.length - 1].querySelector('.message').innerHTML
-          const regex = /(\<.* alt="([a-zA-Z]*)" .*\>*)/gi
-
-          const commentText = comment
-            .replace(/\\n/g, "")
-            .trim().replace(regex, (a,b,c) => {
-              return c.trim()
-            }).replace(/\<.*\>/g, "").replace("***", "fuck").toLowerCase()
+function toggleObserver() {
+  if (!observer) {
+      console.log('Starting observer')
+      observer = new MutationObserver(tryToUtter)
+      observer.observe(document.querySelector('ul.chat-lines'), {childList: true})
+  } else {
+      console.log('disconnecting')
+      observer.disconnect()
+      window.speechSynthesis.cancel()
+      observer = null
+  }
+}
 
 
+function addObserverLink() {
+  //Boot it uppah
+  const linkNode = document.createElement('a')
+  linkNode.innerHTML = "HAWKING"
+  linkNode.classList.add("button", "glyph-only")
+  linkNode.addEventListener("click", toggleObserver)
+  document.querySelector(".chat-buttons-container").appendChild(linkNode)
+}
 
-          const isOnWhiteList = filterWhiteList.filter(whiteWord => commentText.includes(whiteWord)).length
-          console.log(commentText)
-          if(isOnWhiteList) {
-            console.log(commentText)
-            window.speechSynthesis.speak(new SpeechSynthesisUtterance(commentText))
-          }
-        }
-
-        if (!observer) {
-            console.log('Starting observer')
-            observer = new MutationObserver(speak)
-            observer.observe(document.querySelector('ul.chat-lines'), {childList: true})
-        } else {
-            console.log('disconnecting')
-            observer.disconnect()
-            window.speechSynthesis.cancel()
-            observer = null
-        }
-
-    }
-})
+window.setTimeout(addObserverLink, 5000)
 
 

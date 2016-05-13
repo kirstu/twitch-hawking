@@ -4,6 +4,7 @@
   "name": "Twitch Hawking",
   "description": "This extension will tell the truth",
   "version": "1.0",
+  "options_page": "options.html",
 
   "browser_action": {
    "default_icon": "speech.png"
